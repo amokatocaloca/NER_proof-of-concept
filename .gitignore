@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+*.pyc
+wiki.multi.en.vec
+wiki.multi.ru.vec
+bert/results/
