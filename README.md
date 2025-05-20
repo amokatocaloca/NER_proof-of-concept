@@ -9,7 +9,13 @@ pip install -r requirements.txt
 
 ## Project Structure
 
-BERT
+**data_exploration.py**  
+  Exploration and analysis of the BIO-labelled dataset
+
+**proprocess.py**
+ Preprocessing of the Label Studio's output "project-2-at-2025-03-23-04-43-7c53b5c2.csv" into a BIO-labelled dataset
+
+mBERT
 **train_bert.py**  
   Loads the BIO-tagged CSV, builds and fine-tunes a multilingual BERT token-classification head on the stratified train/val splits, and saves out the best checkpoint.
 
@@ -20,7 +26,7 @@ BERT
   Executes the full evaluation suite:  
   1. Inference on the validation and test splits (producing seqeval classification reports).  
   2. Inference over the entire dataset (“model performance” report).  
-  3. MUC-5/SPU error analysis with breakdown counts.  
+  3. MUC-5/SPU error analysis with breakdown counts and visualisations.  
 
 - **data/**  
   Contains `bio_output.csv` (raw BIO-tagged token/label pairs)  
@@ -34,10 +40,10 @@ BiLSTM-CRF
   Reads the BIO-tagged CSV (`bio_output.csv`), builds word & tag vocabularies, aligns bilingual FastText embeddings, and splits into train/val/test arrays saved as `.npz` files.
 
 - **train.py**  
-  Loads the preprocessed splits and embedding matrix, constructs the BiLSTM+CRF model via `build_and_train_bilstm_crf`, trains with early stopping, and writes out the best checkpoint (`ner_model.keras`).
+  Loads the preprocessed splits and embedding matrix, constructs the BiLSTM+CRF model, trains with early stopping, and writes out the best checkpoint (`ner_model.keras`).
 
 - **crf_layer.py**  
-  Defines the custom `CRF` Keras layer along with its log-likelihood loss and masked metrics (`masked_accuracy`, `MaskedF1Score`) used during training and evaluation.
+  Defines the custom `CRF` Keras layer along with its log-likelihood loss and masked metrics used during training and evaluation.
 
 - **ner_model.py**  
   Implements the `build_and_train_bilstm_crf` function—wiring together the Embedding, BiLSTM, TimeDistributed Dense, and CRF layers, compiling with the custom loss/metrics, and running model.fit.
@@ -51,10 +57,13 @@ BiLSTM-CRF
 - **bio_output.csv**  
   The raw token-level annotated dataset (with `doc_id`, `token`, `bio_label`) used to generate vocabularies, embeddings, and train/val/test splits.
 
+- **ner_model.keras**
+The trained BiLSTM-CRF model
+
 
 ## Building and Running the Model Training Script
 
-FOR BERT
+FOR mBERT
 
 1. **Run the script**  
    Make sure that the data files are in place and all dependencies are installed
@@ -77,7 +86,6 @@ To test how the models handles data, run
 
 FOR BiLSTM-CRF
 
-
 1. **Build the vocabulary**  
 ```bash
 python bilstm-crf/vocab.py \
@@ -89,7 +97,7 @@ python bilstm-crf/vocab.py \
 ```
 2. **Run training**  
 ```bash
-    python bilstm-crf/trian.py
+    python bilstm-crf/train.py
 ```
 3. **Evaluate**  
 ```bash
@@ -99,9 +107,9 @@ python bilstm-crf/vocab.py \
 ```bash
     streamlit run bilstm-crf/app.py
 ```
-## Running the software pipeline
+## Running the software itself
 
 ```bash
     streamlit run main.py
 ```
-# NER_proof-of-concept
+The user will prompted to upload three types of documents, which can be accessed in the folder "documents". As mentioned in the text, only two variations can be made, and to run with the 2025 data it should be used with the 2024 reports.

@@ -197,7 +197,7 @@ for _,r in tx_df.iterrows():
         "Дата платежа":       r["Дата платежа"],
         "Назначение платежа": r["Назначение платежа"],
         "Сумма":              amt,
-        "organization":       org,
+        "organisation":       org,
         "payment_type":       ptype,
         "purpose":            purp,
         "month":              r["month"],
@@ -219,21 +219,65 @@ final.insert(0, "№ п/п", final.index+1)
 final = final.loc[:, ~final.columns.duplicated()]
 
 
-# ─── 9. DISPLAY ────────────────────────────────────────────────────────
+# ─── 9. TRANSLATE COLUMNS TO ENGLISH ───────────────────────────────────
+rename_map = {
+    "№ п/п":                                    "Record No.",
+    "Дата платежа":                             "Payment Date",
+    "Назначение платежа":                       "Payment Purpose",
+    "Сумма":                                    "Amount",
+
+    # income columns (prefixed “inc_”)
+    "inc_Поступление благотворительных взносов":                    "Donation Inflows",
+    "inc_Доходы в виде вознаграждения по депозитам":               "Deposit Interest Income",
+    "inc_Прочие операционные доходы (в т.ч. доходы от переоценки валюты)": 
+                                                                       "Other Operating Income (e.g. FX Reval.)",
+    "inc_Итого доходы":                                            "Total Income",
+
+    # expense columns (prefixed “exp_”)
+    "exp_Оказание благотворительной помощи":                       "Charitable Disbursements",
+    "exp_Административные расходы Фонда, в том числе":            "Administrative Expenses (of which)",
+    "exp_Услуги сторонних организаций":                           "Third-Party Services",
+    "exp_Услуги по договорам гражданско-правового характера (ГПХ)": 
+                                                                       "Civil-Contract Services",
+    "exp_Оплата труда, включая налоги и обязательные взносы":      "Payroll (inc. Taxes & Contrib.)",
+    "exp_Налоги и обязательные социальные платежи":               "Taxes and Social Contributions",
+    "exp_Командировочные расходы":                                "Travel Expenses",
+    "exp_Прочие расходы (вкл. амортизацию)":                       "Other Expenses (incl. Deprec.)",
+    "exp_Прочие операционные расходы (в т.ч. от переоценки валюты)":
+                                                                       "Other Operating Expenses (e.g. FX Reval.)",
+    "exp_Итого расходы":                                          "Total Expenses",
+    "exp_Численность Фонда":                                      "Staff Headcount (Fund)",
+    "exp_Численность работников по договорам гражданско- правового характера (ГПХ)":
+                                                                       "Headcount (GPH Contractors)",
+
+    # movement columns (prefixed “mov_”)
+    "mov_Сальдо на начало периода":                              "Opening Balance",
+    "mov_Поступление благотворительных взносов":                  "Donation Inflows (roll-forward)",
+    "mov_Выплаты благотворительной помощи":                      "Charitable Payouts (roll-forward)",
+    "mov_Сальдо на конец периода":                               "Closing Balance",
+}
+
+# apply the rename
+final = final.rename(columns=rename_map)
+
+# now display
 st.subheader("Final Detailed Table")
 st.dataframe(final, use_container_width=True)
 
 
 
 # ─── 10. BUTTON-TRIGGERED SUMMARY + VISUALIZATION ────────────────────────
+
+choice = st.selectbox("Show top 10 by:", ["Total Paid", "Transaction Count"], key="metric_choice")
+
 if st.button("Generate Summary by Attribute"):
     # 10.1) Compute group-by
     org_summary = (
         final
-          .groupby("organization")
+          .groupby("organisation")
           .agg(
-            total_paid      = pd.NamedAgg(column="Сумма", aggfunc="sum"),
-            transaction_cnt = pd.NamedAgg(column="Сумма", aggfunc="count"),
+            total_paid      = pd.NamedAgg(column="Amount", aggfunc="sum"),
+            transaction_cnt = pd.NamedAgg(column="Amount", aggfunc="count"),
             first_month     = pd.NamedAgg(column="month", aggfunc="min"),
             last_month      = pd.NamedAgg(column="month", aggfunc="max"),
           )
@@ -241,13 +285,12 @@ if st.button("Generate Summary by Attribute"):
     )
 
     # 10.2) Choose which metric to sort by and display top 10
-    choice = st.selectbox("Show top 10 by:", ["Total Paid", "Transaction Count"], key="metric_choice")
     sort_col = "total_paid" if choice=="Total Paid" else "transaction_cnt"
 
     # get top-10
     top10 = org_summary.sort_values(by=sort_col, ascending=False).head(10)
 
-    st.subheader(f"Top 10 Organizations by {choice}")
+    st.subheader(f"Top 10 Organisations by {choice}")
     st.dataframe(top10, use_container_width=True)
 
     # 10.3) Plot the same top-10
@@ -256,9 +299,9 @@ if st.button("Generate Summary by Attribute"):
            .mark_bar()
            .encode(
              x=alt.X(f"{sort_col}:Q", title=choice),
-             y=alt.Y("organization:N", sort="-x", title="Organization"),
-             tooltip=["organization", sort_col],
+             y=alt.Y("organisation:N", sort="-x", title="Organisation"),
+             tooltip=["organisation", sort_col],
            )
-           .properties(title=f"Top 10 Organizations by {choice}")
+           .properties(title=f"Top 10 Organisations by {choice}")
     )
     st.altair_chart(chart, use_container_width=True)
